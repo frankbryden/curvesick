@@ -1,7 +1,6 @@
 package game
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -9,33 +8,43 @@ import (
 )
 
 type Player struct {
-	x, y             int
-	speed            float64
-	angle, turnAngle float64
-	history          []Point
-	alive            bool
-	inGap            bool
-	inGapTimer       float64
-	gapTimer         float64
-	pressedKeys      events.KeyState
+	Name        string  `json:"name"`
+	X           int     `json:"x"`
+	Y           int     `json:"y"`
+	XFloat      float64 `json:"x_float"`
+	YFloat      float64 `json:"y_float"`
+	Speed       float64 `json:"speed"`
+	Angle       float64 `json:"angle"`
+	TurnAngle   float64 `json:"turnAngle"`
+	history     []Point
+	alive       bool
+	inGap       bool
+	inGapTimer  float64
+	gapTimer    float64
+	pressedKeys events.KeyState
+	ready       bool
 }
 
-func NewPlayer(gs *GameState) *Player {
+func NewPlayer(gs *GameState, name string) *Player {
 	fmt.Printf("Creating player with rand n bounds %d, %d\n", gs.GetMapWidth()/2, gs.GetMapHeight()/2)
 	//Place Player at random x,y with 1/4 margin
 	x := rand.Intn(gs.GetMapWidth()/2) + gs.GetMapWidth()/4
 	y := rand.Intn(gs.GetMapHeight()/2) + gs.GetMapHeight()/4
 	return &Player{
-		x:          x,
-		y:          y,
-		speed:      BaseSpeed,
-		angle:      rand.Float64() * 2 * math.Pi,
-		turnAngle:  TurnAngle,
+		Name:       name,
+		X:          x,
+		Y:          y,
+		XFloat:     float64(x),
+		YFloat:     float64(y),
+		Speed:      BaseSpeed / 2,
+		Angle:      rand.Float64() * 2 * math.Pi,
+		TurnAngle:  TurnAngle,
 		history:    make([]Point, 0),
 		alive:      true,
 		inGap:      false,
 		inGapTimer: GapTime,
 		gapTimer:   0,
+		ready:      false,
 	}
 }
 
@@ -48,13 +57,15 @@ func (p *Player) update(delta float64) {
 		return
 	}
 	if p.pressedKeys.ArrowLeft {
-		p.angle -= p.turnAngle * delta
+		p.Angle -= p.TurnAngle * delta
 	} else if p.pressedKeys.ArrowRight {
-		p.angle += p.turnAngle * delta
+		p.Angle += p.TurnAngle * delta
 	}
-	fmt.Printf("We need to move in direction %f at a speed of %f (%f s have passed)\n", p.angle, p.speed, delta)
-	p.x += int(p.speed * math.Cos(p.angle) * delta)
-	p.y += int(p.speed * math.Sin(p.angle) * delta)
+
+	p.X += int(p.Speed * math.Cos(p.Angle) * delta)
+	p.Y += int(p.Speed * math.Sin(p.Angle) * delta)
+	p.XFloat += p.Speed * math.Cos(p.Angle) * delta
+	p.YFloat += p.Speed * math.Sin(p.Angle) * delta
 
 	if p.gapTimer <= 0 {
 		p.inGap = true
@@ -64,7 +75,7 @@ func (p *Player) update(delta float64) {
 
 	if !p.inGap {
 		p.gapTimer -= delta
-		p.history = append(p.history, *NewPoint(p.x, p.y))
+		p.history = append(p.history, *NewPoint(p.X, p.Y))
 	} else {
 		p.inGapTimer -= delta
 		if p.inGapTimer <= 0 {
@@ -77,12 +88,12 @@ func (p *Player) OnKeystateChange(state events.KeyState) {
 	p.pressedKeys = state
 }
 
-func (p *Player) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
-		"x":     p.x,
-		"y":     p.y,
-		"alive": p.alive,
-		"angle": p.angle,
-		"speed": p.speed,
-	})
-}
+// func (p *Player) MarshalJSON() ([]byte, error) {
+// 	return json.Marshal(map[string]interface{}{
+// 		"x":     p.X,
+// 		"y":     p.Y,
+// 		"alive": p.alive,
+// 		"angle": p.Angle,
+// 		"speed": p.Speed,
+// 	})
+// }

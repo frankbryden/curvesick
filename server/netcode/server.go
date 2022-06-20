@@ -9,7 +9,8 @@ import (
 )
 
 type GameController interface {
-	RegisterPlayer(conn *websocket.Conn)
+	RegisterClient(conn *websocket.Conn)
+	RegisterPlayer(conn *websocket.Conn, name string)
 }
 
 type Server struct {

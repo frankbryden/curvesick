@@ -13,7 +13,5 @@ func main() {
 	http.HandleFunc("/", g.GetServer().ServeHome)
 	http.HandleFunc("/ws", g.GetServer().ServeWs)
 
-	go g.GameLoop()
-
 	http.ListenAndServe("0.0.0.0:8090", nil)
 }

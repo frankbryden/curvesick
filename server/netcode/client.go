@@ -14,16 +14,18 @@ type Client struct {
 	eventConsumer events.EventConsumer
 	// clientExitEventListener events.ClientExitEventListener
 	clientExitEventListener func()
+	eventChannel            chan events.Event
 }
 
 func NewClient(conn *websocket.Conn) *Client {
 	return &Client{
-		conn: conn,
+		conn:         conn,
+		eventChannel: make(chan events.Event),
 	}
 }
 
-func (c *Client) WriteMessage(message string) {
-	c.conn.WriteMessage(websocket.TextMessage, []byte(message))
+func (c *Client) WriteMessage(message []byte) {
+	c.conn.WriteMessage(websocket.TextMessage, message)
 }
 
 func (c *Client) ReadMessage() string {
@@ -58,14 +60,39 @@ func (c *Client) ReadForever() {
 				}
 			}
 
-			var state events.KeyState
-			err = json.Unmarshal(message, &state)
+			var event events.GenericEvent
+			err = json.Unmarshal(message, &event)
+
+			c.eventChannel <- event
+
+			switch event.Type {
+			case events.TypePlayerRegistrationEvent:
+				var ev events.PlayerRegistrationEvent
+				err := json.Unmarshal(event.Data, &ev)
+				utils.CheckErr(err)
+				c.eventChannel <- ev
+			case events.TypeLobbyEvent:
+				var ev events.LobbyEvent
+				err := json.Unmarshal(event.Data, &ev)
+				utils.CheckErr(err)
+				c.eventChannel <- ev
+			case events.TypeKeyboardUpdateEvent:
+				fmt.Println(event)
+				var ev events.KeyboardUpdateEvent
+				err := json.Unmarshal(event.Data, &ev)
+				utils.CheckErr(err)
+				c.eventChannel <- ev
+			}
 
 			utils.CheckErr(err)
 
-			if c.eventConsumer != nil {
-				c.eventConsumer.OnKeystateChange(state)
-			}
+			// if c.eventConsumer != nil {
+			// 	c.eventConsumer.OnKeystateChange(state)
+			// }
 		}
 	}()
+}
+
+func (c *Client) GetEventsChannel() <-chan events.Event {
+	return c.eventChannel
 }
