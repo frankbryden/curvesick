@@ -5,7 +5,16 @@
         <script type="text/javascript" src="remoteConn.js"></script>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <form id="form" style="margin: 20px">
+            <label for="name">Name:</label><br>
+            <input type="text" id="name" name="name" value="agentCAT"><br>
+            <input type="submit" value="Submit" style="margin-top: 30px;">
+        </form>
+        <button id="readyBtn" style="display: none;">Ready</button>
+        <ul id="lobby">
+            
+        </ul>
     </body>
     <script type="text/javascript" src="game.js"></script>
 </html>
